@@ -1,0 +1,25 @@
+# kbfold 演示规则（全部为虚构项目；断网可跑；与公开规范示例同构）
+version: 1
+root: .
+basis: kbfold:generic/v1
+kbs:
+  - name: 星海项目
+    id: XH-2024
+    detect:
+      markers: [".xhproject"]
+      keywords: ["星海", "XH-2024"]
+    paths:
+      - match: "**/合同/**"
+        to: "02-合同"
+      - match: "**/会议记录/**"
+        to: "03-会议"
+      - match: "**/过程稿/**"
+        to: "@exclude"
+  - name: 远洋项目
+    id: YY-2025
+    detect:
+      markers: [".yyproject"]
+      keywords: ["远洋", "YY-2025"]
+    paths:
+      - match: "**/图纸/**"
+        to: "04-图纸"

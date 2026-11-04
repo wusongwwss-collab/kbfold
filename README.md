@@ -15,10 +15,10 @@
 ## 快速感受
 
 ```bash
-node bin/kbfold.js plan ./examples/demo/fixtures --demo
+npx kbfold plan <你的资料目录> --demo
 ```
 
-（在仓库根目录执行；npm 包发布后亦可用 `npx kbfold …`。）
+（npm 包已发布：[npmjs.com/package/kbfold](https://www.npmjs.com/package/kbfold)；克隆本仓库则直接 `node bin/kbfold.js …`。）
 
 ## 文档
 
@@ -35,7 +35,7 @@ Apache-2.0
 ## 快速开始：5 分钟走完第一遍（断网可跑通）
 
 > **环境底线**：Node.js 20 及以上（推荐 22，22 才自带 `node:sqlite`，20 上全文索引自动降级）。
-> 仓库内直接跑 `node bin/kbfold.js`（Node 壳；npm 包发布后亦可 `npx kbfold`），判定内核由 Python core 承担，机器上需另备 **Python 3.10 及以上**。
+> 零安装路径 `npx kbfold …`（npm 包为 Node 壳），或克隆仓库后 `node bin/kbfold.js`；判定内核由 Python core 承担，机器上需另备 **Python 3.10 及以上**。
 > 壳首次运行自动定位系统 Python（Windows 依次尝试 `py -3` / `python` / `python3`，其余平台依次 `python3` / `python`）；未安装 Python 时打印官方下载指引（https://www.python.org/downloads/）并以退出码 2 结束。
 > 零 API key、零账号、零数据库服务；除可选的本地嵌入模型外，这 5 分钟不发起任何网络请求。
 

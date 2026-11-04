@@ -21,5 +21,5 @@
 
 ### 承诺口径
 
-- `node bin/kbfold.js plan <演示目录> --demo`（git clone 后在仓库根目录执行；npm 包发布筹备中，发布后亦可 `npx kbfold`）：npm 包为 Node 壳，判定内核由 Python core 承担，机器需另备 Python 3.10 及以上。
+- `npx kbfold plan <演示目录> --demo`（npm 包已发布：https://www.npmjs.com/package/kbfold ；Node 壳，克隆仓库则 `node bin/kbfold.js`）：判定内核由 Python core 承担，机器需另备 Python 3.10 及以上。
 - 三条红线写进 README 并可实测：不删文件 / 不联网（audit 自证）/ 不猜（inbox 附候选）。

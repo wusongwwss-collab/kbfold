@@ -89,6 +89,18 @@ Apache-2.0
 - **永不上行什么**：文件名、目录原名、文件内容、路径原文。上传动作发生前，脱敏与槽位化先在你本机完成，原文永不出本机。
 - **随时可关**：`kbfold feedback off`；`kbfold feedback show` 逐条查看上行记录；关闭后恢复零外连，已上行的匿名数据可申请删除。
 
+### 反馈命令速查（v0.2.0）
+
+| 命令 | 作用 | 联网 |
+| --- | --- | --- |
+| `kbfold feedback on [L1\|L2\|L3]` | 开启反馈并选档位（默认 L1；写同意位 `.kbfold/state.json`，打印「上行什么/永不上行」对照） | 否 |
+| `kbfold feedback show` | 待上行逐条可看：级别 / 内容摘要 / 时间 /「尚未发送」态，含本地拒收留痕与已发回执提示 | 否 |
+| `kbfold feedback send` | **唯一联网动作**：先逐条打印最终脱敏形态，y/N 确认后才上行；成功写回执码 `.kbfold/sentreceipts/` | 是 |
+| `kbfold feedback off` | 关闭反馈，恢复零外连（写 90 天静默标记） | 否 |
+| `kbfold feedback clear` | 清空本地待上行记录（不需联网；已发回执与同意位保留） | 否 |
+
+`send` 可靠性语义：每条带独立 nonce 幂等键与 HMAC 签名头（密钥 env `NW_OSS_FEEDBACK_HMAC`；端点 env `NW_OSS_FEEDBACK_ENDPOINT` 可覆盖，缺省 `https://www.easurwork.cn/api/oss-feedback/v1`）；服务端拒收（422，reason 码如 `whitelist:result` / `residue:phone`）的记录本地标 `rejected` 并**永久跳过**；网络/服务端故障（5xx/超时）指数退避重试 ≤3 次，失败不推进游标、下次续发；发送后 30 天内可凭回执码到 https://www.easurwork.cn/open-source/feedback 申请删除。脚本/CI 等非交互环境须显式 `--yes`（stdin 非 TTY 且缺 `--yes` 时退出码 4，绝不静默上行）。
+
 ## 许可
 
 本项目以 **Apache License 2.0** 开源：可自由使用、修改、分发，包括在商业产品中使用（全文见 `LICENSE`）。开源版与商业版的边界见上表——云端批量语义、行业模板与企业协同属闭源商业面，不在本仓库，也不受本许可约束。依赖的第三方组件清单见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)（当前为零）。删除源目录里的 `.kb/` 即可清除全部派生数据——本软件不写系统目录、不留注册表项。

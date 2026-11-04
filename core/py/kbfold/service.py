@@ -66,6 +66,9 @@ _IMPORT_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_][A-Za-z0-9_.]*)", re.M
 #: 删除动作自证：源码内不得出现「un」「link」拼接出的标准库删除调用（拼接扫描，避免本件自证词污染检索面）
 _DEL_A = "un"
 _DEL_B = "link"
+#: 反馈上行唯一网络面（2026-11-05 YQ-1154 D2；opt-in 且默认关闭——`kbfold feedback send`
+#: 显式触发时才 lazy import）。除本清单内文件外，任何文件命中禁网模块仍即自证失败。
+_SANCTIONED_NETWORK_FILES = frozenset({"hosts/cli/kbfold_feedback_net.py"})
 
 
 def kb_path(root, name):
@@ -399,11 +402,16 @@ def scan_report(root):
 
 def audit_self(repo_root):
     """零外连自证：① 逐文件 import 清单；② 禁网模块扫描（命中即非零退出）；③ 删除动作零命中
-    （全仓源码扫「un」「link」拼接串与 os.replace 之外的写法面）；④ 结论行。"""
+    （全仓源码扫「un」「link」拼接串与 os.replace 之外的写法面）；④ 结论行。
+
+    2026-11-05 YQ-1154 D2 起：反馈上行件（_SANCTIONED_NETWORK_FILES）为**唯一**网络面
+    豁免——opt-in（默认关）且发送前逐条展示确认；豁免面单独报出（sanctioned_network），
+    其余文件命中禁网模块仍即自证失败。"""
     repo_root = os.path.abspath(repo_root)
     imports = {}
     violations_net = []
     violations_del = []
+    sanctioned = {}                                    # rel -> [module, ...]（唯一豁免面）
     needle = _DEL_A + _DEL_B
     for sub in _AUDIT_SCAN_ROOTS:
         base = os.path.join(repo_root, sub.replace("/", os.sep))
@@ -425,15 +433,24 @@ def audit_self(repo_root):
                 imports[rel] = mods
                 for m in mods:
                     if m in _NETWORK_MODULES or (m + ".").startswith(tuple(x + "." for x in _NETWORK_MODULES if "." in x)):
-                        violations_net.append({"file": rel, "module": m})
+                        if rel in _SANCTIONED_NETWORK_FILES:
+                            sanctioned.setdefault(rel, []).append(m)
+                        else:
+                            violations_net.append({"file": rel, "module": m})
                 if needle in src:
                     violations_del.append(rel)
     stdlib_ok = True
-    verdict = "零外连：core 与 hosts 的 import 清单内无任何网络模块；删除动作零命中"
     if violations_net or violations_del:
         stdlib_ok = False
         verdict = "自证失败：存在禁网模块或删除动作命中（见明细）"
+    elif sanctioned:
+        verdict = ("默认路径零外连；唯一网络面＝反馈上行件（opt-in，默认关闭）：%s；删除动作零命中"
+                   % ", ".join(sorted(sanctioned)))
+    else:
+        verdict = "零外连：core 与 hosts 的 import 清单内无任何网络模块；删除动作零命中"
     return {"ok": stdlib_ok, "verdict": verdict,
             "network_violations": violations_net,
             "delete_violations": violations_del,
+            "sanctioned_network": [{"file": rel, "modules": mods}
+                                   for rel, mods in sorted(sanctioned.items())],
             "imports": imports}

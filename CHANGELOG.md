@@ -2,6 +2,30 @@
 
 本文件记录 KBFold 对外可见的变更，格式参照 Keep a Changelog，版本号遵循语义化版本。
 
+## [v0.2.0] · 2026-11-05（feedback 命令面；npm 发版另批）
+
+### 新增
+
+- **`kbfold feedback` 五子命令**（YQ-1154 施工批 D2；契约正本＝开源插件回流规范 v1 §4.2/§5/§6）：
+  - `on [L1|L2|L3]`：开启反馈并选档位（默认 L1）——写同意位 `.kbfold/state.json`（consent_asked/level/ts），打印「上行什么 / 永不上行」对照文案；
+  - `show`：待上行逐条可看（级别/内容摘要/时间/「尚未发送」态），含本地拒收留痕与已发回执提示；
+  - `send`：发送前**逐条打印最终脱敏形态**（只 upload 对象），y/N 确认后才上行——组规范 v1 信封（schema_version="1"/product=kbfold/product_version=仓 version/channel=github_npm/feedback_level/nonce=幂等键/ts/payload）＋HMAC 签名头（`X-OSS-Signature: t=<unix>,v1=HMAC-SHA256(secret, t+"."+raw_body)`）POST 端点；2xx 推进游标（`.kbfold/cursor.json` sent_offset）并写回执码文件 `.kbfold/sentreceipts/<回执码>.txt`（响应含 receipt 则用之，否则 nonce 前 6 位）；
+  - `off`：关闭＋90 天静默标记（off_ts），恢复零外连；
+  - `clear`：本地清空待上行记录（截断不删文件、不需联网；回执与同意位保留）。
+- **发送可靠性语义**：服务端 422（reason 码 `residue:phone|residue:email|forbidden_key:<k>|schema:<field>|whitelist:<k>`）单条永久拒收——本地标 `rejected.jsonl` 并展示 reason 码；429/5xx/网络异常指数退避重试 ≤3 次（失败不推进游标、可续发）；400/401/403/404/413 视为端点/签名配置错误——中止且不烧记录；未开启反馈时 `send` 退出码 3；stdin 非 TTY 且缺 `--yes` 时退出码 4（绝不静默上行）；SDK 本地预检拒收（残留/越权/档位降级）同样永久跳过、零网络请求。
+- **环境变量**：`NW_OSS_FEEDBACK_ENDPOINT`（端点覆盖，缺省 `https://www.easurwork.cn/api/oss-feedback/v1`；联调/E2E 用）、`NW_OSS_FEEDBACK_HMAC`（签名密钥；缺省无签头发送并警告）。
+- **测试**：`tests/test_cli_feedback.py` 21 例——本地 mock HTTP 端点（标准库 http.server）全链路：on/off/show/clear、信封八字段与 wire 载荷白名单（L1 只含 event；L2+ 禁含 event）、游标推进不重发、回执码留存（nonce 前 6 位与响应回执两形态）、422 拒收标记、5xx 退避计数与中止、HMAC 头逐字节复算、无签名警告、端点 env 覆盖、TTY 降级、audit 豁免面自证。
+
+### 变更
+
+- **`kbfold audit` 自证口径升级**：反馈上行件 `hosts/cli/kbfold_feedback_net.py` 为全仓**唯一**网络面豁免（opt-in、默认关、`feedback send` 时才 lazy import；audit 明示豁免面），其余任何文件命中禁网模块仍即自证失败——默认路径零外连承诺不变。
+- `feedback on` 状态文件增 `ts`（同意时间戳）；`show` 升级为规范 §6.2 表格形态（待上行 N 条 · 尚未发送）。
+- CONTRIBUTING 增「数据回流与贡献双用途」声明；README 反馈段增命令速查小节；docs/FEEDBACK.md §4 增 send/clear 说明。
+
+### 兼容
+
+- `feedback on --level L2` 旧写法继续可用（新增位置写法 `on L2`）；既有 `state.json` / `feedback.jsonl` 格式不变——游标 / 拒收 / 回执为新增独立文件（`cursor.json` / `rejected.jsonl` / `sentreceipts/`），`.kbfold/` 已加入 .gitignore（本机状态不进公开仓）。
+
 ## [v0.1.0] · 2026-11-01（首发）
 
 ### 新增

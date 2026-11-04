@@ -272,7 +272,9 @@ def test_l3_include_l2_surface(fbdir):
 
 
 # ---------------------------------------------------------------------------
-# CLI：kbfold feedback on|off|show（子进程实测；不改既有子命令行为）
+# CLI：kbfold feedback on|off|show（子进程实测；2026-11-05 YQ-1154 D2 起命令面
+# 升级为 on|off|show|send|clear——本用例随新契约更新：state 增 ts、show 走
+# 规范 §6.2 表格形态「待上行 N 条 · 尚未发送」；--level 别名保留）
 # ---------------------------------------------------------------------------
 
 def run_cli(*argv, cwd=None):
@@ -288,22 +290,30 @@ def test_cli_feedback_on_off_show_roundtrip(tmp_path, monkeypatch):
     assert code == 0, err
     assert "已开启" in out and "L1" in out
     state = fb.load_state(d)
-    assert state == {"consent_asked": True, "level": "L1"}
+    assert state["consent_asked"] is True and state["level"] == "L1"
+    assert state["ts"]                                    # D2 起 on 落同意时间戳
 
-    code, out, err = run_cli("feedback", "on", "--level", "L2")
+    code, out, err = run_cli("feedback", "on", "L2")      # 位置档位（D2 正式形态）
     assert code == 0, err
     assert fb.load_state(d)["level"] == "L2"
 
+    code, out, err = run_cli("feedback", "on", "--level", "L3")  # --level 别名兼容
+    assert code == 0, err
+    assert fb.load_state(d)["level"] == "L3"
+    run_cli("feedback", "on", "L2")
+
     code, out, err = run_cli("feedback", "show")
     assert code == 0, err
-    assert "档位=L2" in out and "尚无上行记录" in out
+    assert "档位=L2" in out and "（无待上行记录）" in out and "尚未发送" in out
 
-    # SDK 落一条 L2 记录后 show 应逐条列出
+    # SDK 落一条 L2 记录后 show 应逐条列出（§6.2 表格：级别/摘要/时间）
     sdk = fb.FeedbackSdk(level="L2", feedback_dir=d)
     sdk.record("L2", _l2_payload())
     code, out, err = run_cli("feedback", "show")
     assert code == 0, err
-    assert "#1" in out and "kbfold" in out
+    assert "待上行 1 条" in out and "尚未发送" in out     # §6.2 表格形态
+    assert "L2" in out and "计数 3 项" in out             # 级别/摘要列
+    assert "kbfold" in out                                # 存储路径 .kbfold/feedback.jsonl
 
     code, out, err = run_cli("feedback", "off")
     assert code == 0, err

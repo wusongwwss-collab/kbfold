@@ -9,3 +9,6 @@ __pycache__/
 dist/
 build/
 .vite/
+
+# kbfold 本机反馈状态（同意位/记录/游标/回执）——绝不进公开仓
+.kbfold/

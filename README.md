@@ -2,7 +2,7 @@
 
 > 一个改错了能一键退回去的知识库整备台。把散乱的项目资料编译成知识库。
 
-**状态：v0.1.0 设计已定稿，代码整理中** —— 本仓库先公开定位、许可与文档；代码整理完成后随首个发布推出。
+**v0.1.0 已发布**（2026-11-01）：零依赖判定内核、CLI 四命令、MCP 服务器、L0 模板与反馈 SDK 全部在本仓库。
 
 ## 它做什么
 
@@ -12,11 +12,13 @@
 - 全文检索：语义 + 全文 + 关键词三路融合，每条结果都带 `[n]` 引用编号
 - 默认零风险：只读扫描、删除能力不存在（代码里没有删文件调用）、除本地嵌入模型外零外连
 
-## 快速感受（仓库正式开源后可用）
+## 快速感受
 
 ```bash
-npx kbfold plan ./fixtures --demo
+node bin/kbfold.js plan ./examples/demo/fixtures --demo
 ```
+
+（在仓库根目录执行；npm 包发布后亦可用 `npx kbfold …`。）
 
 ## 文档
 
@@ -33,14 +35,14 @@ Apache-2.0
 ## 快速开始：5 分钟走完第一遍（断网可跑通）
 
 > **环境底线**：Node.js 20 及以上（推荐 22，22 才自带 `node:sqlite`，20 上全文索引自动降级）。
-> `npx kbfold` 的 npm 包是一个 Node 壳，判定内核由 Python core 承担，机器上需另备 **Python 3.10 及以上**。
+> 仓库内直接跑 `node bin/kbfold.js`（Node 壳；npm 包发布后亦可 `npx kbfold`），判定内核由 Python core 承担，机器上需另备 **Python 3.10 及以上**。
 > 壳首次运行自动定位系统 Python（Windows 依次尝试 `py -3` / `python` / `python3`，其余平台依次 `python3` / `python`）；未安装 Python 时打印官方下载指引（https://www.python.org/downloads/）并以退出码 2 结束。
 > 零 API key、零账号、零数据库服务；除可选的本地嵌入模型外，这 5 分钟不发起任何网络请求。
 
 | 时间 | 你做什么 | 你会看到什么（唯一可信的验收） |
 | --- | --- | --- |
-| 第 0–1 分钟 | `git clone <本仓库> kbfold` 并进入目录 | 首屏与目录树；`examples/fixtures/` 里有约 1000 个文件的合成假目录 |
-| 第 1–2 分钟 | 跑不改任何东西的预演：`npx kbfold plan ./examples/demo/fixtures --demo` | 三块输出：现状统计（多少能判定 / 待归 / 被排除）、疑似知识库（每条带置信与原因）、平手清单——演示目录故意放了三组打平的目录，**第一次跑就会看见 `_inbox/`** |
+| 第 0–1 分钟 | `git clone <本仓库> kbfold` 并进入目录 | 首屏与目录树；`examples/demo/fixtures/` 里有约 1000 个文件的合成假目录 |
+| 第 1–2 分钟 | 跑不改任何东西的预演：`node bin/kbfold.js plan ./examples/demo/fixtures --demo` | 三块输出：现状统计（多少能判定 / 待归 / 被排除）、疑似知识库（每条带置信与原因）、平手清单——演示目录故意放了三组打平的目录，**第一次跑就会看见 `_inbox/`** |
 | 第 2–3 分钟 | 问一个「为什么」：`kbfold explain <任一文件>`；再跑 `kbfold audit` | explain 报出命中层级与依据；audit 的外部端点清单为空——「零外连」当场自证，不用信文档 |
 | 第 3–4 分钟 | 第一次看得见的变化：`kbfold apply ./examples/demo/fixtures --rename-only`（只改名，不搬家） | 文件名当场变规整；末尾打出批次号与退路命令 `kbfold undo <批次号>`；目录结构未动、未跨目录移动任何文件 |
 | 第 4–5 分钟 | 打开 `packs/kbfold/rules.example.yaml` 与 `packs/kbfold/templates/` 浏览规则与模板全貌（全字段中文注释） | 你已站在「改模板」的入口：改一行词表重跑 `plan` 即见差异；想反悔就 `kbfold undo <批次号>`——「改错了能一键退回去」在这 5 分钟里被兑现了三次（plan 零写入 / rename 可整批退 / 模板可 diff） |
@@ -87,6 +89,6 @@ Apache-2.0
 - **永不上行什么**：文件名、目录原名、文件内容、路径原文。上传动作发生前，脱敏与槽位化先在你本机完成，原文永不出本机。
 - **随时可关**：`kbfold feedback off`；`kbfold feedback show` 逐条查看上行记录；关闭后恢复零外连，已上行的匿名数据可申请删除。
 
-## 许可与使用限制
+## 许可
 
-本项目以 **Apache License 2.0**（附多租户服务限制附注）开源：你可以自由使用、修改、分发，包括在商业产品中使用；唯一限制是**不得将本引擎作为多租户托管服务对外提供**（详见 `LICENSE` 文件尾的中文附注）。依赖的第三方组件清单见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)（当前为零）。删除源目录里的 `.kb/` 即可清除全部派生数据——本软件不写系统目录、不留注册表项。
+本项目以 **Apache License 2.0** 开源：可自由使用、修改、分发，包括在商业产品中使用（全文见 `LICENSE`）。开源版与商业版的边界见上表——云端批量语义、行业模板与企业协同属闭源商业面，不在本仓库，也不受本许可约束。依赖的第三方组件清单见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)（当前为零）。删除源目录里的 `.kb/` 即可清除全部派生数据——本软件不写系统目录、不留注册表项。

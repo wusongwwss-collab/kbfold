@@ -3,6 +3,22 @@
   "version": "0.1.0",
   "description": "KBFold · 知识库整备台 —— 把散乱的项目资料编译成知识库（Node 壳；判定内核由 Python core 承担，需另备 Python 3.10+）",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wusongwwss-collab/kbfold.git"
+  },
+  "homepage": "https://github.com/wusongwwss-collab/kbfold#readme",
+  "bugs": {
+    "url": "https://github.com/wusongwwss-collab/kbfold/issues"
+  },
+  "keywords": [
+    "knowledge-base",
+    "knowledge-management",
+    "file-organization",
+    "mcp",
+    "cli",
+    "obsidian"
+  ],
   "bin": {
     "kbfold": "./bin/kbfold.js"
   },

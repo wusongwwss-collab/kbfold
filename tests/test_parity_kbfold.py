@@ -32,14 +32,9 @@ CORE_PY = os.path.join(PUB_ROOT, "core", "py")
 if CORE_PY not in sys.path:
     sys.path.insert(0, CORE_PY)
 
-# 开发机缺省底本位置：主仓需求包内的 kbfold-baseline 快照目录。
-# 内部需求编号按公开仓纪律不以字面量出现在源码面 ⇒ 由两段拼接还原（拼接口径在快照 README 有正本）；
-# 开发机之外不设环境变量且路径不存在时机闸整体 skip，不影响公开仓功能测试。
-_PARITY_ROOT_A = r"C:\yice\negotiation-workbench\docs\需求分析\跨端"
-_PARITY_ROOT_B = "YQ" + "-" + "1136-KBFold知识库整备台开源版"
-DEFAULT_SOURCE = os.path.join(_PARITY_ROOT_A, _PARITY_ROOT_B,
-                              "05-施工", "_assets", "kbfold-baseline")
-BASELINE_DIR = os.environ.get("NW_KBFOLD_PARITY_SOURCE", DEFAULT_SOURCE)
+# 开发机底本位置经环境变量 NW_KBFOLD_PARITY_SOURCE 注入（指向主仓需求包内的 kbfold-baseline 快照目录）；
+# 未注入或路径不存在时机闸整体 skip，不影响公开仓功能测试。
+BASELINE_DIR = os.environ.get("NW_KBFOLD_PARITY_SOURCE") or ""
 
 MAIN_MISSING = not os.path.isdir(BASELINE_DIR) or not os.path.isfile(
     os.path.join(BASELINE_DIR, "kb-tpl-match.js"))

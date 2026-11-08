@@ -448,7 +448,7 @@ def _send_one(url, envelope):
     for attempt in range(_SEND_RETRIES + 1):
         if attempt:
             time.sleep(_BACKOFF_BASE * (2 ** (attempt - 1)))
-        r = net.post_events([envelope], timeout=10.0)
+        r = net.post_events([envelope], timeout=10.0, endpoint=url)  # T13 #8：用宿主解析好的端点
         st = r.get("status")
         if st is not None and 200 <= st < 300:
             return "ok", r.get("body")
@@ -590,7 +590,7 @@ def _fb_send(args, base, state):
     net = _ensure_net()
     if not net.hmac_secret():
         print("⚠ %s" % net.signature_header(b"")[1], file=sys.stderr)
-    url = net.endpoint_url()
+    url = net.endpoint_url(base)   # T13 #8：env > 配置文件(.kbfold/endpoint.json) > 缺省
     sent, rejected_rows = [], []
     abort_msg = None
     for it in send_list:

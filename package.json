@@ -1,6 +1,6 @@
 {
   "name": "kbfold",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "KBFold · 知识库整备台 —— 把散乱的项目资料编译成知识库（Node 壳；判定内核由 Python core 承担，需另备 Python 3.10+）",
   "license": "Apache-2.0",
   "repository": {

@@ -80,7 +80,7 @@ Apache-2.0
 
 一句话：开源版给你一台判定准确、随时可退的整备台；商业版把「等你看的待办」变成「已经做完的活」——语义接管长尾、行业模板替代手写规则、会议证据让库自己长大。
 
-**开源面**＝判定内核、规则 DSL、L0 两套通用模板、库格式公开规范、CLI 与 MCP 壳、反馈 SDK、全部测试；**闭源面**＝六行业模板包、会议证据源、云端聚合与批量语义、企业托管与协同。
+**开源面**＝判定内核、规则 DSL、L0 两套通用模板、库格式公开规范、CLI 与 MCP 壳、反馈 SDK、全部测试；**闭源面**＝六行业模板包、会议证据源、云端聚合与批量语义、企业托管与协同。行业包上线或闭源面清单变更时一跑即核：`python scripts/check-pack-parity.py`（核 `packs/` 实际内容与上述清单的 parity，有差异即非零退出并逐条列出）。
 
 ## 反馈与隐私
 
@@ -99,7 +99,7 @@ Apache-2.0
 | `kbfold feedback off` | 关闭反馈，恢复零外连（写 90 天静默标记） | 否 |
 | `kbfold feedback clear` | 清空本地待上行记录（不需联网；已发回执与同意位保留） | 否 |
 
-`send` 可靠性语义：每条带独立 nonce 幂等键与 HMAC 签名头（密钥 env `NW_OSS_FEEDBACK_HMAC`；端点 env `NW_OSS_FEEDBACK_ENDPOINT` 可覆盖，缺省 `https://www.easurwork.cn/api/oss-feedback/v1`）；服务端拒收（422，reason 码如 `whitelist:result` / `residue:phone`）的记录本地标 `rejected` 并**永久跳过**；网络/服务端故障（5xx/超时）指数退避重试 ≤3 次，失败不推进游标、下次续发；发送后 30 天内可凭回执码到 https://www.easurwork.cn/open-source/feedback 申请删除。脚本/CI 等非交互环境须显式 `--yes`（stdin 非 TTY 且缺 `--yes` 时退出码 4，绝不静默上行）。
+`send` 可靠性语义：每条带独立 nonce 幂等键与 HMAC 签名头（密钥 env `NW_OSS_FEEDBACK_HMAC`；端点解析顺序＝env `NW_OSS_FEEDBACK_ENDPOINT` > 本地配置文件 `.kbfold/endpoint.json`（键 `"endpoint"`，部署侧长效覆盖用）> 代码缺省 `https://www.easurwork.cn/api/oss-feedback/v1`）；服务端拒收（422，reason 码如 `whitelist:result` / `residue:phone`）的记录本地标 `rejected` 并**永久跳过**；网络/服务端故障（5xx/超时）指数退避重试 ≤3 次，失败不推进游标、下次续发；发送后 30 天内可凭回执码到 https://www.easurwork.cn/open-source/feedback 申请删除。脚本/CI 等非交互环境须显式 `--yes`（stdin 非 TTY 且缺 `--yes` 时退出码 4，绝不静默上行）。
 
 ## 许可
 

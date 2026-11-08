@@ -15,7 +15,9 @@
   - 签名头：X-OSS-Signature: t=<unix秒>,v1=HMAC-SHA256(secret, t+"."+raw_body)，
     t 偏差 >300s 服务端拒 403；头缺失 401 signature_missing；
   - 密钥：env ``NW_OSS_FEEDBACK_HMAC``（缺省＝无签头发送，宿主负责警告）；
-  - 端点：env ``NW_OSS_FEEDBACK_ENDPOINT`` 优先，缺省正式端点。
+  - 端点（2026-11-08 外置，T13 #8）：env ``NW_OSS_FEEDBACK_ENDPOINT`` > 本地配置
+    文件 ``<反馈目录>/endpoint.json``（键 ``endpoint``，反馈目录＝<库根>/.kbfold，
+    由 env ``KBFOLD_FEEDBACK_DIR`` 可覆盖）> 代码缺省正式端点。
 
 零第三方依赖：仅 Python 标准库（urllib / hashlib / hmac / json / os / time）。
 """
@@ -31,11 +33,36 @@ import urllib.request
 DEFAULT_ENDPOINT = "https://www.easurwork.cn/api/oss-feedback/v1"
 ENV_ENDPOINT = "NW_OSS_FEEDBACK_ENDPOINT"
 ENV_HMAC = "NW_OSS_FEEDBACK_HMAC"
+# 端点外置（T13 #8，2026-11-08）：本地配置文件名，放在反馈目录（<库根>/.kbfold，
+# env KBFOLD_FEEDBACK_DIR 可覆盖）下；内容形如 {"endpoint": "https://..."}。
+CONFIG_ENDPOINT_FILE = "endpoint.json"
 
 
-def endpoint_url():
-    """上报端点：env NW_OSS_FEEDBACK_ENDPOINT 优先（联调/E2E 用），缺省正式端点。"""
-    return (os.environ.get(ENV_ENDPOINT) or "").strip() or DEFAULT_ENDPOINT
+def _config_endpoint(base=None):
+    """读配置文件端点（键 "endpoint"）；文件不存在/坏 JSON/空值一律回退 None（不炸）。"""
+    if not base:
+        return None
+    path = os.path.join(base, CONFIG_ENDPOINT_FILE)
+    try:
+        with open(path, encoding="utf-8") as f:
+            val = (json.load(f).get("endpoint") or "").strip()
+    except (OSError, ValueError, AttributeError):
+        return None
+    return val or None
+
+
+def endpoint_url(base=None):
+    """上报端点三级解析：env NW_OSS_FEEDBACK_ENDPOINT > 配置文件 endpoint.json > 缺省正式端点。
+
+    env 仍是最高优先（联调/E2E 用）；配置文件供部署侧不改 env 长效覆盖；缺省=正式端点。
+    """
+    env = (os.environ.get(ENV_ENDPOINT) or "").strip()
+    if env:
+        return env
+    cfg = _config_endpoint(base)
+    if cfg:
+        return cfg
+    return DEFAULT_ENDPOINT
 
 
 def hmac_secret():
@@ -58,17 +85,19 @@ def signature_header(raw_body):
     return "t=%d,v1=%s" % (t, mac), None
 
 
-def post_events(events, timeout=10.0):
+def post_events(events, timeout=10.0, endpoint=None):
     """单次 POST（**不重试不退避**——策略在宿主 CLI）。
 
     events: 信封 dict 列表（宿主已按 ≤20 条/批与 ≤64KB 自控；本模块只管传输）。
+    endpoint: 显式端点（宿主已解析好的 URL；T13 #8——不传时内部走 endpoint_url()
+    兜底解析，但该兜底不带反馈目录参数、读不到配置文件级，宿主应显式传入）。
     返回 {"status": int|None, "body": dict|str|None, "error": str|None, "signed": bool}：
     - 2xx/4xx/5xx 一律带 status 返回，宿主分流（2xx 推游标 / 422 单条拒收 / 429·5xx 退避）；
     - 网络异常（URLError/超时/OSError）status=None，宿主按可重试面处理。
     """
     raw = json.dumps({"events": events}, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
-        endpoint_url(), data=raw, method="POST",
+        endpoint or endpoint_url(), data=raw, method="POST",
         headers={"Content-Type": "application/json; charset=utf-8",
                  "User-Agent": "kbfold-feedback/1.0"})
     sig, _warn = signature_header(raw)

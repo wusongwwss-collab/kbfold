@@ -516,6 +516,51 @@ def test_endpoint_env_override_and_default_constant(fb_env, mock_ep):
 
 
 # ---------------------------------------------------------------------------
+# 端点外置（T13 #8，2026-11-08）：env > 配置文件 .kbfold/endpoint.json > 代码缺省
+# ---------------------------------------------------------------------------
+
+def _write_endpoint_cfg(fbdir, obj):
+    fbdir.mkdir(parents=True, exist_ok=True)
+    (fbdir / feedback_net.CONFIG_ENDPOINT_FILE).write_text(
+        json.dumps(obj), encoding="utf-8")
+
+
+def test_endpoint_config_file_overrides_default(fb_env, mock_ep):
+    """配置文件键 endpoint 覆盖代码缺省：send 走 mock path（不设 env）。"""
+    _seed(fb_env, "L1", dict(_L1_PAYLOAD))
+    _write_endpoint_cfg(fb_env, {"endpoint": mock_ep.start()})
+    try:
+        assert _run("feedback", "send", "--yes") == 0
+    finally:
+        mock_ep.stop()
+    assert mock_ep.requests[0]["path"] == "/mock/oss-feedback/v1"
+
+
+def test_endpoint_env_beats_config_file(fb_env, mock_ep):
+    """env 优先于配置文件：两处都设时走 env 端点，配置文件不生效。"""
+    _write_endpoint_cfg(fb_env, {"endpoint": "https://config.invalid/v1"})
+    url = feedback_net.endpoint_url(str(fb_env))
+    monkey_ep = pytest.MonkeyPatch()
+    monkey_ep.setenv("NW_OSS_FEEDBACK_ENDPOINT", mock_ep.start())
+    try:
+        assert feedback_net.endpoint_url(str(fb_env)).startswith("http://127.0.0.1:")
+    finally:
+        monkey_ep.undo()
+    assert url == "https://config.invalid/v1"          # env 缺席时配置文件生效
+
+
+def test_endpoint_config_file_bad_or_empty_falls_back(fb_env):
+    """坏 JSON / 空值 / 缺文件 / base 缺席：一律回退代码缺省，不炸。"""
+    assert feedback_net.endpoint_url(None) == feedback_net.DEFAULT_ENDPOINT
+    assert feedback_net.endpoint_url(str(fb_env)) == feedback_net.DEFAULT_ENDPOINT
+    _write_endpoint_cfg(fb_env, {"endpoint": "   "})
+    assert feedback_net.endpoint_url(str(fb_env)) == feedback_net.DEFAULT_ENDPOINT
+    (fb_env / feedback_net.CONFIG_ENDPOINT_FILE).write_text(
+        "{ not-json", encoding="utf-8")
+    assert feedback_net.endpoint_url(str(fb_env)) == feedback_net.DEFAULT_ENDPOINT
+
+
+# ---------------------------------------------------------------------------
 # clear：本地清空（不联网），保留同意位与回执
 # ---------------------------------------------------------------------------
 

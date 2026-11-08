@@ -2,6 +2,18 @@
 
 本文件记录 KBFold 对外可见的变更，格式参照 Keep a Changelog，版本号遵循语义化版本。
 
+## [v0.2.1] · 2026-11-08（T13 #8/#9 收口：反馈端点外置＋行业包 parity 机闸）
+
+### 变更
+
+- **反馈端点外置（T13 #8）**：`send` 端点解析改为三级——env `NW_OSS_FEEDBACK_ENDPOINT` > 本地配置文件 `.kbfold/endpoint.json`（键 `"endpoint"`，部署侧长效覆盖用，坏文件静默回退不炸）> 代码缺省正式端点；README 端点披露行同步。env 仍是联调/E2E 最高优先，缺省行为不变。
+- README 闭源面披露行尾附 `python scripts/check-pack-parity.py` 用法一句。
+
+### 新增
+
+- **行业包 parity 机闸 `scripts/check-pack-parity.py`（T13 #9）**：核 `packs/` 实际内容（顶层包白名单＋内置包文件快照）vs README 闭源面披露行——行业包上线/闭源面变更时一跑即核，列 packs 新增件与 README 清单差异，有差异即非零退出；当前基线零行业包应 PASS。
+- `tests/test_cli_feedback.py` 增端点外置 3 例（配置文件覆盖缺省 / env 压过配置文件 / 坏 JSON 空值回退）；`tests/test_pack_parity.py` 最小自测 4 例（真实基线 PASS＋行业包泄漏/README 删行/内置包多件三负例，负例一律 tmp_path 副本）。
+
 ## [v0.2.0] · 2026-11-05（feedback 命令面；npm 发版另批）
 
 ### 新增
